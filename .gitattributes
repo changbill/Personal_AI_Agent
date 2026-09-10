@@ -7,3 +7,10 @@
 Dockerfile text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
+
+# CLAUDE.md and AGENTS.md must stay byte-identical, and scripts/check_docs_sync.sh
+# enforces that with a byte comparison. Windows would check them out as CRLF while
+# a Linux session writes LF, which breaks the comparison for a reason that has
+# nothing to do with their content. Pin every Markdown file to LF so the check
+# means what it says on both platforms.
+*.md text eol=lf
