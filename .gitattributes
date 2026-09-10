@@ -1,0 +1,9 @@
+# Shell scripts run on the Linux mini PC — must keep LF endings.
+# Without this, Git on Windows checks them out with CRLF and `sh script.sh`
+# fails with a "\r: command not found" / bad interpreter error.
+*.sh text eol=lf
+
+# Same reasoning for container/infra files consumed inside Linux images.
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
