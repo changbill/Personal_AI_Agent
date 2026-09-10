@@ -7,7 +7,7 @@
 
 | Phase | 상태 | 요약 |
 | --- | --- | --- |
-| 0. 환경 검증 | 진행 중 | 개발 머신 사양·툴체인 확인 완료, Strands/Ollama 사양 확인 완료. **미니PC 실측과 모델 벤치마크가 남아 있어 미완료.** |
+| 0. 환경 검증 | 완료 | Docker CPU Ollama에서 `qwen3.5:2b-q4_K_M`를 기본 모델로 선정. 3회 평균 4.20 tok/s, Tool Calling·JSON 출력 확인. |
 | 1. 기본 Agent | 미착수 | — |
 | 2. Multi Agent | 미착수 | — |
 | 3. Tool Calling | 미착수 | — |
@@ -24,5 +24,6 @@
 - `strands-agents` 1.54.0의 Ollama 연동 사양 확인 (extra 이름, `OllamaModel` 파라미터, Python 요구 버전) — 상세는 `ARCHITECTURE.md`
 - Ollama 라이브러리의 현재 Qwen 라인업과 소형 태그별 용량 확인 — 후보 목록은 `PLAN.md`
 - `scripts/phase0_probe.sh` 작성 — 미니PC 사양 측정용, 읽기 전용
+- 미니PC 실측 완료 — Intel N150(4코어, AVX2), RAM 15GiB(측정 시 MemAvailable 9GiB), 디스크 여유 48GiB, Intel 내장 GPU, Docker/Compose 실행 가능. 상세는 `ARCHITECTURE.md`
 - `CLAUDE.md` / `AGENTS.md`를 이 프로젝트(Python) 기준으로 재작성하고 `scripts/check_docs_sync.sh`로 동기화 검증 자동화
 - `.harness/` 문서 체계 신설

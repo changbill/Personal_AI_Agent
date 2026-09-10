@@ -89,11 +89,23 @@ tests/
 | uv | **미설치** |
 | Ollama | **미설치** (의도적. 배포 대상이 아니므로 여기서 벤치마크하지 않는다) |
 
-### 4.2 배포 대상 (Linux 미니PC) — **미실측**
+### 4.2 배포 대상 (Linux 미니PC) — 실측 2026-09-10
 
-사양을 아직 확인하지 못했다. `scripts/phase0_probe.sh`를 미니PC에서 실행해 CPU·코어 수·MemAvailable·AVX2 지원 여부·GPU/NPU 유무를 받아야 모델 크기를 확정할 수 있다.
+| 항목 | 값 |
+| --- | --- |
+| OS | Ubuntu 24.04.4 LTS, kernel 6.8.0-137-generic, x86_64 |
+| CPU | Intel N150, 4코어 / 4스레드, 최대 3.6GHz, L3 6MiB |
+| SIMD | AVX, AVX2, F16C, FMA 지원. AVX-512 미지원 |
+| RAM | 15GiB 총량, 측정 시 MemAvailable 9GiB, swap 4GiB |
+| Disk | 루트 볼륨 98GiB 중 48GiB 여유 |
+| GPU/NPU | Intel Alder Lake-N 내장 GPU (`/dev/dri/card0`). NVIDIA/AMD GPU 및 NPU는 확인되지 않음 |
+| 컨테이너 | Docker 29.1.3 및 Docker Compose v5.1.3, Docker 데몬 실행 확인 |
+| 기본 도구 | Python 3.12.3, Git, curl. Ollama·Redis·PostgreSQL·pip3 미설치 |
 
-**개발 머신의 벤치마크 결과를 미니PC에 이전하지 않는다.** 개발 머신에는 6GB GPU가 있고 미니PC에는 없을 가능성이 높아, 응답 속도와 실행 가능 모델 크기가 전혀 달라진다. 하드웨어와 무관한 품질 지표(라우팅 정확도, Tool Calling 성공률)만 이전 가능하다.
+N150은 CPU 추론을 기준으로 모델을 선정한다. 내장 GPU는 감지됐지만 범용 렌더 노드(`/dev/dri/renderD*`)가 확인되지 않았으므로 GPU/NPU 가속을 전제로 하지 않는다. RAM 및 디스크 용량상 2B~4B급 양자화 모델을 우선 벤치마크하고, 9B급은 첫 후보에서 제외한다.
+
+**개발 머신의 벤치마크 결과를 미니PC에 이전하지 않는다.** 개발 머신에는 6GB GPU가 있고 이 미니PC의 가속 조건은 다르므로, 응답 속도와 실행 가능 모델 크기가 달라진다. 하드웨어와 무관한 품질 지표(라우팅 정확도, Tool Calling 성공률)만 이전 가능하다.
+
 
 ## 5. 런타임 구성 (목표, 아직 미구현)
 

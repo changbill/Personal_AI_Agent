@@ -5,6 +5,7 @@
 
 | 날짜 | 결정 | 이유 |
 | --- | --- | --- |
+| 2026-09-10 | Phase 1 기본 모델은 `qwen3.5:2b-q4_K_M`으로 고정한다 | N150 CPU Docker 환경에서 3회 평균 4.20 tok/s, 약 2.33GiB 메모리를 기록했고 Tool Calling·JSON Structured Output을 통과했다. `qwen2.5:3b`도 기능은 통과했지만 3.28 tok/s로 약 22% 느렸다. 4B 추가 평가는 필요성이 확인되지 않아 보류한다. 상세는 `benchmarks/phase0/RESULTS.md` 참조. |
 | 2026-09-10 | `.harness/` 7개 문서 체계를 지금 생성한다 | 지침이 "세션 시작 시 반드시 읽으라"고 지시하는 파일이 없으면 Codex 세션이 첫 지시부터 깨진다. 문서 체계를 만들고 나서 지침을 적용하는 순서가 맞다. |
 | 2026-09-10 | `CLAUDE.md`와 `AGENTS.md`를 전문 복제로 유지하고 `scripts/check_docs_sync.sh`로 검증한다 | Claude Code는 CLAUDE.md를, Codex는 AGENTS.md를 읽는다. 한쪽만 두고 import하는 방식은 평문으로 읽는 도구가 내용을 못 본다. 실제로 이미 drift가 발생했었다 — 이전 Java 프로젝트에서 AGENTS.md가 DOMAIN.md 관련 항목 4개를 조용히 잃은 상태였다. 사람의 규율에만 맡기면 반복되므로 기계적 검사를 붙인다. |
 | 2026-09-10 | 별도 `docs/api/openapi.yaml`을 두지 않는다 | FastAPI가 Pydantic 스키마와 라우터에서 OpenAPI를 자동 생성한다. 별도 스펙 파일을 두면 코드와 두 벌이 되어 어긋난다. 코드를 계약의 단일 원본으로 삼는다. |

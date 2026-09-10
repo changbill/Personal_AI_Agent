@@ -5,35 +5,6 @@
 
 최종 갱신: 2026-09-10
 
-## Phase 0 — 환경 검증 (진행 중, 사용자 입력 대기)
-
-### 0-A. 미니PC 실측 — **차단됨: 사용자 입력 필요**
-
-- [ ] 미니PC에서 `scripts/phase0_probe.sh` 실행하고 출력 확보
-- [ ] 결과를 `ARCHITECTURE.md` 4.2절에 기록
-- [ ] MemAvailable과 AVX2 지원 여부로 실행 가능한 모델 크기 확정
-
-측정해야 할 것: CPU 모델·코어 수, MemAvailable, **AVX/AVX2/AVX512 지원 여부**(CPU 추론 처리량을 크게 가른다), GPU/NPU 유무, Disk 여유, Docker 설치 여부.
-
-### 0-B. Ollama 설치 및 모델 벤치마크 (0-A 이후)
-
-- [ ] 미니PC에 Ollama 설치 (Docker vs 호스트 직접 설치를 자원 효율 기준으로 비교 후 결정)
-- [ ] 후보 모델 pull 및 실행 가능 여부 확인
-- [ ] 모델별 측정: 모델 로딩 가능 여부, RAM 사용량, 응답 속도(tok/s), 한국어 품질, Tool Calling 동작 여부, Structured Output 안정성
-- [ ] 결과 비교 후 Phase 1에서 쓸 모델 태그 확정 → `DECISIONS.md`에 근거 기록
-
-**모델 후보** (Ollama 라이브러리 실측 용량, 2026-09-10 확인)
-
-| 후보 | 태그 | 용량 | 적합 조건 |
-| --- | --- | --- | --- |
-| A | `qwen3.5:2b-q4_K_M` | 1.9GB | RAM 4~8GB 미니PC 1순위 |
-| B | `qwen3.5:4b-q4_K_M` | 3.4GB | RAM 8~16GB, 품질 우선 |
-| C | `qwen2.5:3b` | ~1.9GB | thinking 없는 대조군 (지연시간 예측 가능) |
-| D | `qwen3.5:0.8b` | 1.0GB | RAM 4GB 미만 최후수단 |
-| E | `qwen3.5:9b-q4_K_M` | 6.6GB | RAM 16GB+ 여유 있을 때만 |
-
-qwen3.5는 tools·thinking·vision을 지원하고 context 256K. qwen2.5는 tools만 지원하고 thinking 없음.
-`qwen3.5:latest`는 9b를 가리키므로 **태그를 반드시 명시한다.**
 
 ## Phase 1 — 기본 Agent (미착수)
 

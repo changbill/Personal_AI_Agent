@@ -36,3 +36,37 @@
 - **아직 애플리케이션 코드가 하나도 없다.** `pyproject.toml`도 `app/`도 `tests/`도 없다. 있다고 가정하고 참조하지 말 것.
 - **thinking 모드 끄는 경로와 `num_ctx` 적용 여부는 미검증이다.** Strands 문서에서 확인하지 못했다. Phase 1에서 실제로 돌려보고 확인할 것. 추측으로 구현하지 말 것.
 - `CLAUDE.md`를 고치면 반드시 `cp CLAUDE.md AGENTS.md` 후 `sh scripts/check_docs_sync.sh`로 검증할 것.
+
+---
+
+## 2026-09-10 — 세션 2 (Codex)
+
+**브랜치:** `phase0/record-minipc-specs`
+
+### 한 일
+
+1. **미니PC 실측 결과를 문서에 반영했다.** Intel N150(4코어, AVX2), RAM 15GiB(측정 당시 MemAvailable 9GiB), 디스크 여유 48GiB, Intel 내장 GPU, Docker/Compose 실행 가능 상태를 `ARCHITECTURE.md` 4.2절에 기록했다.
+2. **Phase 0-A를 완료로 전환했다.** `STATE.md`와 `PLAN.md`에서 미니PC 사양 수집 대기를 해소하고, 남은 작업을 Phase 0-B(Ollama 설치 방식 결정 및 모델 벤치마크)로 정리했다.
+
+### 다음 세션이 할 일
+
+1. Phase 0-B 시작 전 사용자에게 Ollama 벤치마크 계획(실행 방식, 후보 모델, 측정 항목, 변경 파일, 테스트 방법)을 제시하고 컨펌을 받는다.
+2. 컨펌 후 Ollama를 CPU 기준으로 설치·실행하고 `qwen3.5:2b-q4_K_M`, `qwen2.5:3b`, 필요 시 `qwen3.5:4b-q4_K_M`을 순차 벤치마크한다.
+3. 모델 태그 및 운영 설정이 확정되면 `DECISIONS.md`에 근거를 남기고 Phase 1로 넘어간다.
+
+---
+
+## 2026-09-10 — 세션 3 (Codex)
+
+**브랜치:** `phase0/record-minipc-specs`
+
+### 한 일
+
+1. Phase 0-B CPU 벤치마크 구성을 추가했다: `docker-compose.benchmark.yml`, `scripts/benchmark_ollama.sh`, `benchmarks/phase0/RESULTS.md`.
+2. Ollama 0.33.3 컨테이너를 기동하고 `qwen3.5:2b-q4_K_M`을 실측했다. 3회 평균은 15.19초, 4.20 tok/s, 컨테이너 메모리 스냅샷 2.33GiB다. 단일 도구 Tool Calling 및 JSON Structured Output도 확인했다.
+3. `qwen2.5:3b`를 다운로드하고 비교 측정을 시작했다. 모델은 내려받았지만, 반복 측정 결과는 아직 문서화하지 않았다.
+
+### 다음 세션이 할 일
+
+1. `qwen2.5:3b`의 반복 성능·Tool Calling·Structured Output을 측정해 `benchmarks/phase0/RESULTS.md`에 기록한다.
+2. 2B 결과와 비교해 4B 추가 평가 필요성을 판단한다. 모델 태그 및 운영 설정은 비교 데이터가 갖춰진 뒤 `DECISIONS.md`에만 확정한다.
