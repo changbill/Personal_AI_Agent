@@ -1,0 +1,23 @@
+[project]
+name = "personal-ai-agent"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.141.1",
+    "strands-agents[ollama]==1.54.0",
+    "uvicorn>=0.52.4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.16.6",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+markers = [
+    "unit: 외부 의존성이 없는 순수 로직 테스트",
+    "integration: Redis 또는 PostgreSQL 컨테이너 통합 테스트",
+    "llm: 실행 중인 Ollama 로컬 모델 호출 테스트",
+]

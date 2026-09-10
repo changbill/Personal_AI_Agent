@@ -70,3 +70,35 @@
 
 1. `qwen2.5:3b`의 반복 성능·Tool Calling·Structured Output을 측정해 `benchmarks/phase0/RESULTS.md`에 기록한다.
 2. 2B 결과와 비교해 4B 추가 평가 필요성을 판단한다. 모델 태그 및 운영 설정은 비교 데이터가 갖춰진 뒤 `DECISIONS.md`에만 확정한다.
+
+---
+
+## 2026-09-10 — 세션 4 (Codex)
+
+**브랜치:** `phase1/basic-agent`
+
+### 한 일
+
+1. 사용자 컨펌 후 Phase 1의 FastAPI `POST /chat`, 단일 General Agent, 환경변수 설정, 구조화 로그, pytest 마커와 단위 테스트를 구현했다.
+2. Strands 1.54.0 패키지 코드에서 `additional_args`가 Ollama chat 요청 최상위 인자로, `options`가 요청 options으로 전달되는 것을 확인했다. 코드에는 `think=false`, `num_ctx=2048`을 적용했다.
+3. `uv run ruff check app tests`, `uv run pytest -m unit`은 통과했다. `uv run pytest -m llm`은 이 환경에 Ollama 환경변수·서버가 없어 skip됐다.
+
+### 다음 세션이 할 일
+
+미니PC에서 Ollama 환경변수를 설정한 뒤 `uv run pytest -m llm`을 실행한다. 통과하면 thinking·`num_ctx`의 실측 결과를 정책·아키텍처·결정 문서에 반영하고 Phase 1을 완료 처리한다. 현재 미추적 파일은 이 세션에서 만든 Phase 1 산출물이며, 사용자 요청 없이는 커밋하지 않는다.
+
+---
+
+## 2026-09-10 — 세션 5 (Codex)
+
+**브랜치:** `phase1/basic-agent`
+
+### 한 일
+
+1. 실행 중인 `personal-ai-agent-ollama-benchmark` 컨테이너에서 `qwen3.5:2b-q4_K_M` 존재를 확인하고, `OLLAMA_HOST=http://127.0.0.1:11434`, `OLLAMA_NUM_CTX=2048`으로 llm 테스트를 실행했다. 12.54초에 통과했다.
+2. `think=false` 및 `num_ctx=2048`의 Strands→Ollama 전달 경로를 SDK 코드와 실호출로 확인해 `CLAUDE.md`=`AGENTS.md`, `ARCHITECTURE.md`, `DECISIONS.md`에 반영했다.
+3. Phase 1을 완료 처리했다. `ruff check`, unit 4개, llm 1개가 통과했고, `uv lock --check`, 문서 동기화, diff 공백 검사도 통과했다.
+
+### 다음 세션이 할 일
+
+Phase 2를 시작하려면 사용자에게 Multi Agent의 목표·파일·라우팅 설계·테스트 방법을 먼저 제시하고 컨펌을 받는다.

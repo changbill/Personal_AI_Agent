@@ -6,19 +6,6 @@
 최종 갱신: 2026-09-10
 
 
-## Phase 1 — 기본 Agent (미착수)
-
-- [ ] `uv` 설치 및 `pyproject.toml` 초기화 (Python 3.12)
-- [ ] 의존성 추가: `strands-agents[ollama]`, `fastapi`, `uvicorn`, dev로 `pytest`, `ruff`
-- [ ] pytest 마커 등록 (`unit`, `integration`, `llm`)
-- [ ] Ollama 연결 및 `OllamaModel` 구성
-- [ ] **thinking 모드 비활성화 경로 실측 검증** — `additional_args`로 `think=False`가 실제로 전달되는지 확인하고 결과를 `ARCHITECTURE.md` 3절과 `CLAUDE.md` 로컬 LLM 정책에 반영
-- [ ] **`options={"num_ctx": N}` 적용 확인** 및 초기값 결정 → `DECISIONS.md`
-- [ ] 단일 Agent로 `POST /chat` 구현
-- [ ] 응답 검증 테스트 작성 (`unit` + 최소한의 `llm`)
-
-## Phase 2 이후 (미착수, 개요만)
-
 - **Phase 2 Multi Agent** — Orchestrator / Schedule / Search / General 구현, 라우팅 테스트
 - **Phase 3 Tool Calling** — 역할별 Tool 구현, Agent별 Tool 분리, Description 작성, 오선택 사례를 테스트로 축적
 - **Phase 4 Session Memory** — Redis, TTL, multi-turn
@@ -32,9 +19,6 @@
 
 | 항목 | 확정 시점 |
 | --- | --- |
-| Ollama를 Docker로 띄울지 호스트에 직접 설치할지 | Phase 0-B |
-| 사용할 모델 태그 | Phase 0-B |
-| `num_ctx` 값 | Phase 1 |
 | Redis TTL (24시간 또는 7일에서 시작) | Phase 4 |
 | Session Memory에서 LLM에 넘길 최근 메시지 수 N | Phase 4 |
 | ORM 사용 여부, 스키마 마이그레이션 도구 | Phase 5 |

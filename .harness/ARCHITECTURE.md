@@ -7,7 +7,7 @@
 
 ## 1. 코드베이스 현황
 
-**현재 애플리케이션 코드는 존재하지 않는다.** 저장소에 있는 것은 다음이 전부다.
+**Phase 1의 최소 애플리케이션 코드가 존재한다.** 현재 저장소 구성은 다음과 같다.
 
 | 경로 | 내용 |
 | --- | --- |
@@ -19,8 +19,12 @@
 | `.gitignore` | GitHub 표준 Python 템플릿 |
 | `README.md` | 스텁 (제목 한 줄) |
 | `LICENSE` | — |
+| `app/` | FastAPI 진입점, 단일 General Agent, 설정·구조화 로그 |
+| `tests/` | Phase 1 unit·llm 테스트 |
+| `pyproject.toml` / `uv.lock` | Python 3.12 의존성·고정된 잠금 파일 |
+| `.env.example` | Ollama 환경변수 키와 의미 |
 
-없는 것: `pyproject.toml`, `uv.lock`, `app/`, `tests/`, `Dockerfile`, `docker-compose.yml`, `.env.example`.
+없는 것: `Dockerfile`, `docker-compose.yml`.
 
 ## 2. 목표 디렉터리 구조 (아직 미생성)
 
@@ -70,7 +74,7 @@ tests/
 - Structured Output은 Pydantic 모델을 **tool spec으로 변환**한다. 따라서 **tool calling을 지원하지 않는 모델에서는 Memory Agent의 Structured Output이 동작하지 않는다.**
 - Ollama는 단일 메시지 안의 content block 배열을 지원하지 않아, SDK가 멀티파트 메시지를 별도 메시지로 평탄화한다.
 
-**아직 실측하지 않은 것:** thinking 모드를 끄는 경로(`additional_args`로 `think=False` 전달이 실제로 먹는지)와 `options={"num_ctx": N}` 적용 여부. Phase 1에서 확인한다.
+Strands 1.54.0에서 `additional_args={"think": False}`는 Ollama chat 요청의 최상위 인자로, `options={"num_ctx": 2048}`은 요청 options로 전달됨을 패키지 코드와 미니PC 실호출로 확인했다.
 
 ## 4. 실행 환경
 

@@ -5,6 +5,7 @@
 
 | 날짜 | 결정 | 이유 |
 | --- | --- | --- |
+| 2026-09-10 | Phase 1 Ollama 설정은 `think=false`, `num_ctx=2048`로 고정한다 | Strands 1.54.0의 요청 생성 코드에서 `additional_args`와 `options`가 각각 Ollama 요청에 전달되는 것을 확인했고, Intel N150 미니PC에서 해당 환경변수로 실제 LLM 테스트가 12.54초에 통과했다. 2048은 Phase 0 벤치마크와 같은 RAM 보수값이다. |
 | 2026-09-10 | Phase 1 기본 모델은 `qwen3.5:2b-q4_K_M`으로 고정한다 | N150 CPU Docker 환경에서 3회 평균 4.20 tok/s, 약 2.33GiB 메모리를 기록했고 Tool Calling·JSON Structured Output을 통과했다. `qwen2.5:3b`도 기능은 통과했지만 3.28 tok/s로 약 22% 느렸다. 4B 추가 평가는 필요성이 확인되지 않아 보류한다. 상세는 `benchmarks/phase0/RESULTS.md` 참조. |
 | 2026-09-10 | `.harness/` 7개 문서 체계를 지금 생성한다 | 지침이 "세션 시작 시 반드시 읽으라"고 지시하는 파일이 없으면 Codex 세션이 첫 지시부터 깨진다. 문서 체계를 만들고 나서 지침을 적용하는 순서가 맞다. |
 | 2026-09-10 | `CLAUDE.md`와 `AGENTS.md`를 전문 복제로 유지하고 `scripts/check_docs_sync.sh`로 검증한다 | Claude Code는 CLAUDE.md를, Codex는 AGENTS.md를 읽는다. 한쪽만 두고 import하는 방식은 평문으로 읽는 도구가 내용을 못 본다. 실제로 이미 drift가 발생했었다 — 이전 Java 프로젝트에서 AGENTS.md가 DOMAIN.md 관련 항목 4개를 조용히 잃은 상태였다. 사람의 규율에만 맡기면 반복되므로 기계적 검사를 붙인다. |

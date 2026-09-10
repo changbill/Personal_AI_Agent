@@ -137,7 +137,7 @@ Agent 구성: Orchestrator / Schedule / Search / General / Memory.
 - Context에 전체 세션이나 전체 Memory를 넣지 않는다. Session Memory는 최근 N개를 우선 쓰고 길어지면 요약하며, Long-term Memory는 현재 요청과 관련된 것만 선별해 주입한다.
 - Agent 하나에 등록하는 Tool 수를 최소로 유지한다. Tool Description은 짧고 명확하게 쓰고, 호출 조건과 비호출 조건을 함께 적는다.
 - **LLM의 Structured Output을 그대로 신뢰하지 않는다.** Agent는 판단만 하고, 저장 여부·범위·부작용의 최종 결정은 Application 코드가 검증 후 내린다.
-- 위 thinking·`num_ctx` 항목의 구체적 설정 경로는 Strands `OllamaModel`에서 아직 실측 검증하지 않았다. Phase 1에서 확인한 뒤 확정 값을 이 절에 반영한다.
+- Phase 1에서 Strands `OllamaModel(host=..., model_id=..., additional_args={"think": False}, options={"num_ctx": 2048})`를 적용했다. SDK 요청 생성 코드와 미니PC Ollama 실호출 테스트로 전달 경로를 검증했다.
 
 ## 하네스: DB 정책
 
@@ -170,7 +170,7 @@ Agent 구성: Orchestrator / Schedule / Search / General / Memory.
 - **전체 스위트**(`uv run pytest`)는 사용자가 명시적으로 요청했거나 CI에서 실행한다.
 - **`llm` 마커 테스트는 기본 실행에서 제외한다.** 느리고 비결정적이며 Ollama가 떠 있어야 한다. 모델·프롬프트·Tool Description을 바꿨을 때와 평가 시점에 명시적으로 실행한다: `uv run pytest -m llm`.
 - **평가(`tests/evaluation/`)는 pass/fail 테스트가 아니라 지표 측정이다.** 라우팅 정확도·Tool 선택 정확도·Memory 정확도·지연시간·CPU/RAM을 측정해 결과를 남긴다. 이걸 일반 테스트 스위트에 섞어 CI를 빨갛게 만들지 않는다.
-- **아직 존재하지 않는 것:** `tests/` 디렉터리 전체와 pytest 설정. Phase 1에서 처음 만든다.
+- pytest 마커(`unit`, `integration`, `llm`)와 `tests/` 디렉터리는 Phase 1에서 구성했다.
 
 ## 하네스: 통합 테스트 구조
 
