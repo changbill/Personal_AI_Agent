@@ -102,3 +102,35 @@
 ### 다음 세션이 할 일
 
 Phase 2를 시작하려면 사용자에게 Multi Agent의 목표·파일·라우팅 설계·테스트 방법을 먼저 제시하고 컨펌을 받는다.
+
+---
+
+## 2026-09-10 — 세션 6 (Codex)
+
+**브랜치:** `feat/external-chat-access`
+
+### 한 일
+
+1. `GET /`에 최소 브라우저 채팅 화면을 추가했다. 화면은 같은 origin의 `POST /chat`만 호출하며 `/docs`는 유지된다.
+2. 외부 hostname `personal-agent.changee.cloud`, loopback Uvicorn 실행 방법 및 Cloudflare Tunnel/Access 설정 조건을 README와 하네스 문서에 기록했다. token·credential은 기록하지 않았다.
+3. `uv run ruff format --check app tests`, `uv run ruff check app tests`, `uv run pytest -m unit`을 실행해 통과했다 (unit 5 passed, llm 1 deselected).
+
+### 다음 세션이 할 일
+
+사용자가 Cloudflare Tunnel·Access 및 외부 브라우저 접근을 확인해 완료 처리했다. 다음 작업은 Phase 2이며, 시작 전 사용자에게 목표·파일·라우팅 설계·테스트 방법을 제시하고 컨펌을 받는다.
+
+---
+
+## 2026-09-11 — 세션 7 (Codex)
+
+**브랜치:** `feat/external-chat-access`
+
+### 한 일
+
+1. 사용자가 Cloudflare Tunnel·Access 설정과 인증된 외부 HTTPS 채팅 요청, 미인증 접근 차단을 확인했다고 보고했다.
+2. 외부 Chat 접근 계획을 완료 처리하고, 현재 아키텍처·Phase 1 완료 상태를 동기화했다.
+3. 커밋 전 검증으로 unit 테스트 5개 통과, ruff 검사·포맷 검사, 문서 동기화, lock 검사를 통과했다.
+
+### 다음 세션이 할 일
+
+Phase 2를 시작하려면 사용자에게 Multi Agent의 목표·파일·라우팅 설계·테스트 방법을 먼저 제시하고 컨펌을 받는다.

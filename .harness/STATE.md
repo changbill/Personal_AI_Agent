@@ -8,7 +8,7 @@
 | Phase | 상태 | 요약 |
 | --- | --- | --- |
 | 0. 환경 검증 | 완료 | Docker CPU Ollama에서 `qwen3.5:2b-q4_K_M`를 기본 모델로 선정. 3회 평균 4.20 tok/s, Tool Calling·JSON 출력 확인. |
-| 1. 기본 Agent | 완료 | 단일 General Agent 기반 `POST /chat`, 환경변수 설정, 구조화 로그, unit·llm 검증 완료. |
+| 1. 기본 Agent | 완료 | 단일 General Agent 기반 `POST /chat`·브라우저용 `GET /`, 환경변수 설정, 구조화 로그, unit·llm 검증 및 Cloudflare Access 외부 접근 확인 완료. |
 | 2. Multi Agent | 미착수 | — |
 | 3. Tool Calling | 미착수 | — |
 | 4. Session Memory | 미착수 | — |
