@@ -19,7 +19,7 @@
 | `.gitignore` | GitHub 표준 Python 템플릿 |
 | `README.md` | 스텁 (제목 한 줄) |
 | `LICENSE` | — |
-| `app/` | FastAPI 진입점, 단일 General Agent, 설정·구조화 로그 |
+| `app/` | FastAPI 진입점, 단일 General Agent, 설정·구조화 로그, 브라우저 채팅 정적 자산 |
 | `tests/` | Phase 1 unit·llm 테스트 |
 | `pyproject.toml` / `uv.lock` | Python 3.12 의존성·고정된 잠금 파일 |
 | `.env.example` | Ollama 환경변수 키와 의미 |
@@ -128,6 +128,13 @@ User → FastAPI
      → Redis Session Memory 저장
      → Memory Agent가 저장 후보 판단 → Application 검증 → PostgreSQL 저장
 ```
+
+### 외부 브라우저 접근
+
+- FastAPI는 `GET /`에서 같은 origin의 `POST /chat`을 호출하는 정적 채팅 화면을 제공한다. `/docs`는 계속 제공된다.
+- 외부 hostname은 `personal-agent.changee.cloud`이며, Cloudflare Tunnel Public Hostname의 Service URL은 `http://127.0.0.1:8000`이어야 한다.
+- 미니PC API는 `uv run uvicorn app.main:app --host 127.0.0.1 --port 8000`으로 loopback에만 바인딩한다.
+- Cloudflare Access의 허용 정책, 인증된 외부 HTTPS 채팅 요청 및 미인증 접근 차단을 확인했다.
 
 ## 6. 컨벤션
 

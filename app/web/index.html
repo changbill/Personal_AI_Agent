@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Personal AI Agent</title>
+    <link rel="stylesheet" href="/static/chat.css">
+    <script src="/static/chat.js" defer></script>
+  </head>
+  <body>
+    <main class="chat-shell">
+      <header>
+        <h1>Personal AI Agent</h1>
+        <p>개인용 로컬 AI 비서</p>
+      </header>
+      <section id="messages" class="messages" aria-live="polite">
+        <p class="message assistant">무엇을 도와드릴까요?</p>
+      </section>
+      <form id="chat-form" class="chat-form">
+        <label for="message">메시지</label>
+        <textarea id="message" name="message" rows="3" maxlength="4000" required placeholder="메시지를 입력하세요"></textarea>
+        <button type="submit">보내기</button>
+      </form>
+    </main>
+  </body>

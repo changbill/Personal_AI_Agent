@@ -1,0 +1,1 @@
+"""Browser chat interface assets."""

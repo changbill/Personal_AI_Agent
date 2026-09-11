@@ -43,3 +43,14 @@ def test_chat_rejects_blank_message() -> None:
         )
 
     assert response.status_code == 422
+
+
+def test_chat_page_serves_browser_interface() -> None:
+    application = create_app()
+
+    with TestClient(application) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    assert "Personal AI Agent" in response.text
+    assert 'src="/static/chat.js"' in response.text
