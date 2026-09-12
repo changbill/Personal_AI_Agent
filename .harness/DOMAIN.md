@@ -4,7 +4,7 @@
 > 여기 적힌 규칙은 프롬프트·Tool Description·검증 코드·평가 데이터셋의 기준이 된다. 넷 중 하나를 바꾸면 나머지도 같은 작업에서 맞춘다.
 
 최종 갱신: 2026-09-12
-구현 상태: **Phase 2 Agent 라우팅 구현 완료.** Tool Calling과 Memory 관련 규칙은 아직 미구현이다.
+구현 상태: **Phase 2 Agent 라우팅과 Phase 3-A Tool Calling 구현 완료.** Memory 관련 규칙(3절 이하)은 아직 미구현이다.
 
 ## 1. Agent 라우팅 규칙
 
@@ -34,20 +34,125 @@ Orchestrator는 사용자 의도를 분석해 전문 Agent 하나를 고른다. 
 
 **Agent마다 자기 역할에 필요한 Tool만 등록한다.** 소형 로컬 모델은 선택지가 늘수록 오선택이 급증한다.
 
-| Agent | Tool |
-| --- | --- |
-| Schedule Agent | `get_schedule`, `create_schedule`, `update_schedule`, `delete_schedule` |
-| Search Agent | `search_web`, `get_weather`, `search_place` |
-| Memory (Agent/Application) | `search_memory`, `save_memory`, `update_memory` |
-| General Agent | 없음 |
+| Agent | Tool | 구현 상태 |
+| --- | --- | --- |
+| Schedule Agent | `get_schedule`, `create_schedule`, `update_schedule`, `delete_schedule` | Phase 3-A 구현 완료 |
+| Search Agent | `get_weather` | Phase 3-A 구현 완료 |
+| General Agent | `get_current_time` | Phase 3-A 구현 완료 |
+| Search Agent | `search_web`, `search_place` | 미구현. 무료 제공자 결정 후 Phase 3-B |
+| Memory (Agent/Application) | `search_memory`, `save_memory`, `update_memory` | 미구현. Phase 5~6 |
+| General Agent | 일정·날씨·검색 Tool 없음 | 의도적으로 비워 둔다. `get_current_time`만 예외 |
 
 각 Tool에는 역할·입력 파라미터·반환값·**호출해야 하는 상황**·**호출하면 안 되는 상황**을 명시한다. Description은 짧고 명확하게 유지한다.
 
-`get_schedule` 예시
+### 2.1 Tool Description은 이 저장소가 소유한다
+
+일정 Tool은 Google Calendar MCP 서버가 노출하는 Tool을 그대로 쓰지 않고, 자체 `@tool` 래퍼로 감싼다. MCP 서버의 Description은 편집할 수 없는 영어 한 줄이고 비호출 조건이 없어, 위 규칙을 코드에서 지킬 수 없기 때문이다. 소형 모델에서는 Description이 곧 Tool 선택 로직이다.
+
+따라서 Tool 이름도 MCP 이름(`list-events` 등)이 아니라 이 표의 이름을 쓴다. 래퍼와 MCP Tool의 대응은 다음과 같다.
+
+| 이 저장소의 Tool | MCP 서버 Tool |
+| --- | --- |
+| `get_schedule` | `list-events` |
+| `create_schedule` | `create-event` |
+| `update_schedule` | `update-event` |
+| `delete_schedule` | `delete-event` |
+
+MCP 서버가 노출하는 나머지 8개 Tool은 `tool_filters`로 차단하고, Application도 이 4개 외의 이름은 호출을 거부한다.
+
+### 2.2 일정 Tool 계약
+
+`get_schedule`
 
 - 역할: 지정된 기간의 사용자 일정을 조회한다.
-- Use when: 특정 날짜의 일정을 요청받았을 때 / 새 일정 생성 전 충돌을 확인할 때
-- Do not use when: 일정과 관련 없는 요청 / 실제 일정 생성 작업
+- 입력: `start_date`, `end_date` (둘 다 `YYYY-MM-DD`)
+- Use when: 특정 날짜나 기간의 일정을 요청받았을 때 / 새 일정 생성 전 충돌을 확인할 때
+- Do not use when: 일정을 만들거나 바꾸거나 지울 때 / 일정과 무관한 요청
+
+`create_schedule`
+
+- 역할: 새 일정을 추가한다.
+- 입력: `summary`, `start_datetime`, `end_datetime` (필수), `description`, `location` (선택)
+- Use when: 사용자가 약속이나 회의를 새로 잡아 달라고 할 때
+- Do not use when: 기존 일정을 조회·변경할 때 / 제목이나 시작·종료 시각을 아직 모를 때
+
+`update_schedule`
+
+- 역할: 기존 일정의 내용을 바꾼다.
+- 입력: `event_id` (필수), `summary`, `start_datetime`, `end_datetime`, `location` (선택)
+- Use when: 기존 일정의 시각·제목·장소를 바꿔 달라고 하고 `event_id`를 알고 있을 때
+- Do not use when: `event_id`를 모를 때 (먼저 `get_schedule`) / 새 일정을 만들 때 / 일정을 지울 때
+
+`delete_schedule`
+
+- 역할: 일정을 삭제한다.
+- 입력: `event_id` (필수)
+- Use when: 특정 일정을 취소·삭제해 달라고 하고 `event_id`를 알고 있을 때
+- Do not use when: `event_id`를 모를 때 (먼저 `get_schedule`) / 내용만 바꾸면 되는 때
+
+`get_weather`
+
+- 역할: 지정한 도시의 현재 날씨를 조회한다.
+- 입력: `city`
+- Use when: 특정 지역의 날씨·기온·강수를 물어볼 때
+- Do not use when: 과거나 여러 날 뒤의 예보를 물어볼 때 / 날씨와 무관한 검색 요청
+
+**지명 해석은 코드가 판정한다.** Open-Meteo Geocoding의 색인은 로마자이므로 `language=ko`를 줘도
+한국어 이름으로는 검색되지 않는다. 판정 순서는 다음과 같다.
+
+| 순서 | 규칙 |
+| --- | --- |
+| 1 | 공백을 제거하고 `app/services/place_directory.py`의 한국 지명 표에서 찾는다 |
+| 2 | 못 찾으면 `특별시`·`광역시`·`시`·`군`·`구`·`도` 등 접미사를 떼고 다시 찾는다. 접미사를 뗀 결과가 표에 있을 때만 뗀다 (`대구`를 `대`로 자르지 않기 위함) |
+| 3 | `도` 단위 질의는 도청 소재 도시로 해석하고, 답변에 그 도시 이름을 남긴다 |
+| 4 | 표에 없으면 Geocoding API를 부른다. 질의에 한글이 있으면 `country_code == "KR"` 결과를 우선한다 |
+| 5 | 그래도 못 찾으면 Tool을 실패시킨다. 모델이 임의의 지역 날씨를 답하게 두지 않는다 |
+
+표에 담는 범위는 17개 시·도와 주요 시까지다. 읍·면·동 단위는 Geocoding 폴백이 담당한다.
+
+`get_current_time`
+
+- 역할: 지금의 날짜·요일·시각을 조회한다. 등록 대상은 **General Agent뿐이다.**
+- 입력: 없음
+- Use when: 현재 날짜나 시각, 오늘이 무슨 요일인지 물어볼 때
+- Do not use when: 일정을 조회·변경할 때 / 날씨를 물어볼 때 / 날짜와 무관한 일반 대화
+
+### 2.3 Tool 인자 검증은 Application이 한다
+
+LLM이 제안한 Tool 인자를 그대로 외부 시스템에 넘기지 않는다. 다음은 코드가 판정하며, 위반은 Tool 실패로 반환해 모델이 다시 시도하게 한다.
+
+| 규칙 | 값 |
+| --- | --- |
+| 날짜 형식 | `start_date`·`end_date`는 `YYYY-MM-DD`만 허용. 시각이 붙으면 거부 |
+| 날짜시간 형식 | `start_datetime`·`end_datetime`은 ISO 8601이며 시각을 포함해야 한다 |
+| 기간 순서 | `end_date >= start_date`, `end_datetime > start_datetime` |
+| 조회 기간 상한 | 최대 31일. Context에 들어갈 일정 수를 제한하기 위한 값 |
+| 일정 길이 상한 | 최대 30일 |
+| 부분 수정 | 시각을 바꾸려면 시작·종료를 함께 주어야 한다. 변경 항목이 하나도 없으면 거부 |
+| 필수 식별자 | `update_schedule`·`delete_schedule`은 `event_id`가 비어 있으면 거부 |
+| 허용 MCP Tool | 위 4개 외의 MCP Tool 이름은 호출하지 않는다 |
+
+### 2.4 날짜는 Agent마다 다른 경로로 전달한다
+
+"내일", "다음 주" 같은 상대 표현을 모델이 날짜로 바꾸려면 오늘 날짜를 알아야 한다. 전달 경로는 Agent마다 다르고, 기준은 **왕복 비용**이다.
+
+| Agent | 날짜 전달 경로 | 이유 |
+| --- | --- | --- |
+| Schedule Agent | system prompt 주입 | 일정 요청은 항상 날짜가 필요하다. Tool로 받으면 조회 한 번에 왕복이 둘(시간 → 일정)이 되어 2B 모델에서 약 15초가 더 붙는다 |
+| Search Agent | system prompt 주입 | 같은 이유 |
+| General Agent | `get_current_time` Tool | 대화 대부분은 날짜가 필요 없다. 항상 주입하면 매 요청 Context를 낭비하고, 주입한 날짜를 그대로 읽으면 Tool이 무의미해진다 |
+
+주입되는 날짜는 **`AGENT_TIMEZONE`에서 계산한다.** `date.today()`는 OS 로컬 시간대를 따르므로, 호스트가 UTC면 한국 시간 자정부터 오전 9시까지 날짜가 하루 밀린다. 이 구간은 실측으로 확인했다.
+
+MCP 서버의 `get-current-time` Tool은 등록하지 않는다. Schedule Agent의 Tool 수를 늘리고, 우리가 Description을 소유하지 못한다.
+
+### 2.5 시간 조회는 실패하지 않는다
+
+`get_current_time`의 주 소스는 외부 API이고, 실패하면 `AGENT_TIMEZONE` 기준 로컬 시계로 폴백한다. 어느 소스를 썼는지 로그에 남긴다. 시간 조회가 요청 실패의 원인이 되면 안 된다.
+
+### 2.6 Tool이 없을 때의 동작
+
+캘린더 MCP 서버에 연결되지 않으면 Schedule Agent에 Tool을 **0개** 등록하고, system prompt가 연결되지 않았음을 알린다. 동작하지 않는 Tool을 등록해 두면 모델이 가져오지 않은 결과를 사실처럼 말하게 된다. 캘린더 부재는 요청 실패가 아니라 답변의 품질 저하로 처리한다.
 
 ## 3. Long-term Memory 저장 판정
 

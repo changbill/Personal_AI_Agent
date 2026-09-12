@@ -1,29 +1,38 @@
-"""General conversation agent with no tools or persistent memory."""
+"""General conversation agent holding only the current-time tool.
+
+Calendar and weather tools stay off this agent on purpose: a 2B model asked to chat while
+holding them reaches for them on unrelated questions. The time tool is the one exception,
+because this agent gets no date injected and otherwise cannot answer "오늘 며칠이야".
+"""
+
+from typing import Any
 
 from strands import Agent
-from strands.models.ollama import OllamaModel
 
+from app.agents.model_factory import build_ollama_model
+from app.agents.prompts import general_system_prompt
+from app.agents.reply import AgentReply, summarize_tool_calls
 from app.core.config import Settings
 
 
 class GeneralAgent:
     """Owns one short-lived Strands agent invocation."""
 
-    def __init__(self, settings: Settings) -> None:
-        self._agent = Agent(
-            model=OllamaModel(
-                host=settings.ollama_host,
-                model_id=settings.ollama_model,
-                additional_args={"think": False},
-                options={"num_ctx": settings.ollama_num_ctx},
-                temperature=0,
-            ),
-            system_prompt="한국어로 간결하고 정확하게 답변하는 개인 비서입니다.",
-        )
+    def __init__(self, settings: Settings, tools: list[Any] | None = None) -> None:
+        self._settings = settings
+        self._tools = tools or []
 
-    def respond(self, message: str) -> str:
+    def respond(self, message: str) -> AgentReply:
         """Generate one response without retaining cross-request conversation history."""
-        response = str(self._agent(message)).strip()
-        if not response:
+        agent = Agent(
+            model=build_ollama_model(self._settings),
+            system_prompt=general_system_prompt(time_tool_available=bool(self._tools)),
+            tools=self._tools,
+        )
+        result = agent(message)
+        text = str(result).strip()
+        if not text:
             raise RuntimeError("모델이 비어 있는 응답을 반환했습니다")
-        return response
+        return AgentReply(
+            text=text, tool_calls=summarize_tool_calls(result.metrics.tool_metrics)
+        )

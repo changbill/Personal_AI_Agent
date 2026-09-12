@@ -1,32 +1,49 @@
-"""Schedule specialist without calendar tools in Phase 2."""
+"""Schedule specialist backed by the Google Calendar MCP server.
+
+The Strands agent is rebuilt per request because the system prompt carries today's date,
+which must be current. The tools and the MCP session are built once and reused: spawning
+a calendar session per request would add startup latency to every turn.
+"""
+
+from collections.abc import Callable
+from datetime import date
+from typing import Any
 
 from strands import Agent
-from strands.models.ollama import OllamaModel
 
+from app.agents.model_factory import build_ollama_model
+from app.agents.prompts import schedule_system_prompt
+from app.agents.reply import AgentReply, summarize_tool_calls
 from app.core.config import Settings
 
 
 class ScheduleAgent:
-    """Respond to schedule requests without fabricating calendar data."""
+    """Answer schedule requests using calendar tools when a calendar is reachable."""
 
-    def __init__(self, settings: Settings) -> None:
-        self._agent = Agent(
-            model=OllamaModel(
-                host=settings.ollama_host,
-                model_id=settings.ollama_model,
-                additional_args={"think": False},
-                options={"num_ctx": settings.ollama_num_ctx},
-                temperature=0,
+    def __init__(
+        self,
+        settings: Settings,
+        tools: list[Any],
+        today: Callable[[], date],
+    ) -> None:
+        self._settings = settings
+        self._tools = tools
+        self._today = today
+
+    def respond(self, message: str) -> AgentReply:
+        agent = Agent(
+            model=build_ollama_model(self._settings),
+            system_prompt=schedule_system_prompt(
+                today=self._today(),
+                timezone=self._settings.timezone,
+                calendar_available=bool(self._tools),
             ),
-            system_prompt=(
-                "한국어로 간결하게 답변하는 일정 관리 전문 비서입니다. "
-                "현재는 실제 캘린더 조회·생성·수정 도구가 없습니다. "
-                "확인하지 못한 일정이나 변경 결과를 사실처럼 말하지 마세요."
-            ),
+            tools=self._tools,
         )
-
-    def respond(self, message: str) -> str:
-        response = str(self._agent(message)).strip()
-        if not response:
+        result = agent(message)
+        text = str(result).strip()
+        if not text:
             raise RuntimeError("모델이 비어 있는 응답을 반환했습니다")
-        return response
+        return AgentReply(
+            text=text, tool_calls=summarize_tool_calls(result.metrics.tool_metrics)
+        )

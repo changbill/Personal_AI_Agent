@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Google Calendar OAuth client secrets and tokens (never commit)
+secrets/
+*.keys.json

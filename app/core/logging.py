@@ -13,6 +13,7 @@ class JsonFormatter(logging.Formatter):
         "session_id",
         "selected_agent",
         "tools_used",
+        "tools_failed",
         "agent_latency_ms",
         "llm_latency_ms",
         "memory_retrieved",
