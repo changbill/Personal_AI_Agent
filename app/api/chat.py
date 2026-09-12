@@ -1,4 +1,4 @@
-"""Single-turn chat endpoint for Phase 1."""
+"""Single-turn chat endpoint."""
 
 import logging
 import time
@@ -7,12 +7,8 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
 
-from app.agents.general_agent import GeneralAgent
-from app.agents.orchestrator import Orchestrator
-from app.agents.schedule_agent import ScheduleAgent
-from app.agents.search_agent import SearchAgent
-from app.core.config import Settings
 from app.services.orchestrator_service import OrchestratorService
+from app.services.runtime import get_runtime
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -37,13 +33,8 @@ class ChatResponse(BaseModel):
 
 
 def get_orchestrator_service() -> OrchestratorService:
-    settings = Settings.from_env()
-    return OrchestratorService(
-        orchestrator=Orchestrator(),
-        general_agent=GeneralAgent(settings),
-        schedule_agent=ScheduleAgent(settings),
-        search_agent=SearchAgent(settings),
-    )
+    """Return the process-scoped service, sharing one calendar session across requests."""
+    return get_runtime().service
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -60,6 +51,7 @@ def chat(request: ChatRequest) -> ChatResponse:
                 "session_id": request.session_id,
                 "selected_agent": "unknown",
                 "tools_used": [],
+                "tools_failed": [],
                 "memory_retrieved": False,
                 "memory_stored": False,
             },
@@ -75,7 +67,10 @@ def chat(request: ChatRequest) -> ChatResponse:
             "user_id": request.user_id,
             "session_id": request.session_id,
             "selected_agent": routed_response.selected_agent,
-            "tools_used": [],
+            "tools_used": list(routed_response.tool_names),
+            "tools_failed": [
+                call.name for call in routed_response.tool_calls if not call.succeeded
+            ],
             "agent_latency_ms": round((time.monotonic() - started_at) * 1_000, 2),
             "llm_latency_ms": round((time.monotonic() - started_at) * 1_000, 2),
             "memory_retrieved": False,

@@ -1,0 +1,63 @@
+# Google Calendar MCP server for the Schedule Agent.
+#
+# Kept separate from the Phase 9 runtime compose file, the same way the Phase 0
+# benchmark stack is. Merge the two only when Phase 9 defines the full runtime.
+#
+# The upstream project publishes no Docker image, so this builds from a pinned git
+# tag. Pinning matters here for the same reason model tags are pinned: a moving
+# target invalidates every tool-selection measurement taken against it.
+#
+# Before the first run:
+#   1. Create a Google Cloud project and enable the Google Calendar API.
+#   2. Create an OAuth 2.0 client ID of type "Desktop app" and download the JSON.
+#   3. Save it as ./secrets/gcp-oauth.keys.json (gitignored, never committed).
+#   4. Complete the one-time OAuth consent, which needs a browser. The mini PC is
+#      loopback only, so forward the port over SSH or approve on a desktop and copy
+#      the token volume across.
+#
+# Run with:
+#   docker compose -f docker-compose.calendar.yml up -d --build
+
+services:
+  calendar-mcp:
+    build:
+      context: https://github.com/nspady/google-calendar-mcp.git#v2.6.3
+    image: personal-ai-agent/calendar-mcp:v2.6.3
+    container_name: personal-ai-agent-calendar-mcp
+    environment:
+      TRANSPORT: http
+      # The upstream default binds 127.0.0.1, which is unreachable from another
+      # container. Container-internal exposure only; the port below stays on loopback.
+      HOST: 0.0.0.0
+      PORT: "3000"
+      GOOGLE_OAUTH_CREDENTIALS: /app/gcp-oauth.keys.json
+    ports:
+      # Loopback only. The calendar server is never published to the network;
+      # external access to this project goes through Cloudflare Access on the API.
+      - "127.0.0.1:3000:3000"
+      # Loopback range used by the one-time OAuth consent callback.
+      - "127.0.0.1:3500-3505:3500-3505"
+    volumes:
+      - ./secrets/gcp-oauth.keys.json:/app/gcp-oauth.keys.json:ro
+      - calendar_tokens:/home/nodejs/.config/google-calendar-mcp
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        # The mini PC has 15GiB total and Ollama already holds about 2.3GiB.
+        # A Node process must not be able to grow into the model memory.
+        limits:
+          memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  calendar_tokens:

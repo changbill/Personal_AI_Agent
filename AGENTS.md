@@ -123,7 +123,8 @@ Agent 구성: Orchestrator / Schedule / Search / General / Memory.
 - Python 최소 버전은 3.12로 잡는다 (Strands Agents SDK는 3.10 이상을 요구한다).
 - Lint·format은 **ruff**(`uv run ruff check .`, `uv run ruff format .`)를 쓴다. 별도 flake8/black/isort를 추가하지 않는다.
 - 타입 체크 도구는 아직 도입하지 않았다. 도입한다면 이 절과 `pyproject.toml`, CI 설정을 같은 작업에서 함께 갱신한다.
-- **아직 존재하지 않는 것:** `pyproject.toml`, `uv.lock`, `app/` 패키지, `tests/`, `Dockerfile`, `docker-compose.yml`, `.env.example`. 이미 만들어졌다고 가정하고 참조하지 않는다. 각각 해당 Phase에서 실제로 만든다.
+- **이미 존재하는 것:** `pyproject.toml`, `uv.lock`, `app/` 패키지, `tests/`, `.env.example`, `docker-compose.benchmark.yml`, `docker-compose.calendar.yml`.
+- **아직 존재하지 않는 것:** `Dockerfile`, 통합 `docker-compose.yml`, `tests/evaluation/`. 이미 만들어졌다고 가정하고 참조하지 않는다. 각각 해당 Phase(9, 9, 8)에서 실제로 만든다.
 
 ## 하네스: 로컬 LLM 정책
 
@@ -139,6 +140,18 @@ Agent 구성: Orchestrator / Schedule / Search / General / Memory.
 - **LLM의 Structured Output을 그대로 신뢰하지 않는다.** Agent는 판단만 하고, 저장 여부·범위·부작용의 최종 결정은 Application 코드가 검증 후 내린다.
 - Phase 1에서 Strands `OllamaModel(host=..., model_id=..., additional_args={"think": False}, options={"num_ctx": 2048})`를 적용했다. SDK 요청 생성 코드와 미니PC Ollama 실호출 테스트로 전달 경로를 검증했다.
 
+## 하네스: 외부 Tool·MCP 정책
+
+**목표:** 외부 시스템을 Tool로 붙일 때 소형 모델의 Tool 선택 정확도와 비용 제약을 지킨다.
+
+- 외부 시스템을 MCP로 붙일 때, **MCP 서버의 Tool을 Agent에 그대로 노출하지 않는다.** 자체 `@tool` 래퍼로 감싸고, Tool 이름·Description·호출/비호출 조건을 이 저장소가 소유한다. MCP 서버의 Description은 편집할 수 없고 비호출 조건이 없어, 소형 모델의 오선택을 막을 수단이 사라진다.
+- MCP 서버가 노출하는 Tool 중 **실제로 쓰는 것만** 허용한다. `tool_filters`로 로드를 제한하고, Application도 허용 목록 외의 이름은 호출을 거부한다.
+- **MCP 세션은 프로세스 단위로 열고 재사용한다.** 요청마다 서버를 띄우면 시작 지연이 매 턴에 붙고 인증 토큰 경합이 생긴다.
+- **외부 Tool의 장애를 요청 실패로 만들지 않는다.** 연결 실패는 Tool 0개로 격리하고, Agent가 연결 불가를 말하게 한다. 동작하지 않는 Tool을 등록해 두면 모델이 가져오지 않은 결과를 사실처럼 말한다.
+- **LLM이 제안한 Tool 인자를 검증 없이 외부 시스템에 넘기지 않는다.** 형식·범위·필수 필드를 Application이 판정하고, 위반은 Tool 실패로 반환한다.
+- MCP 서버와 외부 컨테이너 이미지도 **태그를 고정한다.** 모델 태그와 같은 이유다 — 대상이 바뀌면 이전 측정과 비교할 수 없다.
+- 외부 API는 무료 사용 범위가 충분한 것을 우선하고, 계정·카드가 필요한 제공자는 근거 없이 도입하지 않는다. 선택 근거는 `.harness/DECISIONS.md`에 남긴다.
+
 ## 하네스: DB 정책
 
 **목표:** 저장소별 역할과 로컬·테스트·운영에서 사용할 엔진을 고정한다.
@@ -146,6 +159,7 @@ Agent 구성: Orchestrator / Schedule / Search / General / Memory.
 - 이 프로젝트의 유일한 RDB는 **PostgreSQL**이다. 로컬 실행, 테스트, 운영 모두 PostgreSQL을 사용한다. SQLite로 대체하지 않는다.
 - **Redis는 Session Memory 전용이다.** TTL이 붙은 휘발성 대화 컨텍스트만 담는다. 사라지면 안 되는 데이터를 Redis에만 두지 않는다.
 - **PostgreSQL은 Long-term Memory 전용이다.** 세션 종료 후에도 재사용할 가치가 있는 선호·습관·반복 패턴만 저장한다. 일회성 사실은 저장하지 않는다.
+- **일정 데이터는 이 프로젝트의 DB에 저장하지 않는다.** Google Calendar가 유일한 출처다. 일정 테이블을 만들지 않는다.
 - 두 저장소의 경계를 흐리지 않는다. Session Memory와 Long-term Memory를 같은 코드 경로에서 섞어 다루지 않는다.
 - **pgvector는 아직 도입하지 않는다.** 초기 Retrieval은 `memory_type`/`key` 기반 검색으로 구현한다. 자연어 검색의 필요성이 평가 데이터로 확인되면 그때 Phase 7에서 도입하고, embedding 모델도 외부 유료 API보다 로컬 실행 가능한 것을 우선 검토한다.
 - 로컬 개발 환경의 PostgreSQL과 Redis는 Docker로 실행한다.

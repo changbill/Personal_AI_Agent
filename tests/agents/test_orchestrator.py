@@ -1,6 +1,7 @@
 import pytest
 
 from app.agents.orchestrator import AgentName, Orchestrator
+from app.agents.reply import AgentReply, ToolCall
 from app.services.orchestrator_service import OrchestratorService
 
 pytestmark = pytest.mark.unit
@@ -22,13 +23,14 @@ def test_orchestrator_selects_one_safe_agent(message: str, expected: AgentName) 
 
 
 class StubAgent:
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, tool_calls: tuple[ToolCall, ...] = ()) -> None:
         self.name = name
+        self.tool_calls = tool_calls
         self.received_messages: list[str] = []
 
-    def respond(self, message: str) -> str:
+    def respond(self, message: str) -> AgentReply:
         self.received_messages.append(message)
-        return f"{self.name}: {message}"
+        return AgentReply(text=f"{self.name}: {message}", tool_calls=self.tool_calls)
 
 
 def test_service_calls_only_selected_agent() -> None:
@@ -44,6 +46,33 @@ def test_service_calls_only_selected_agent() -> None:
     assert general.received_messages == []
     assert schedule.received_messages == ["내일 일정 알려줘"]
     assert search.received_messages == []
+
+
+def test_service_carries_tool_usage_out_of_the_agent() -> None:
+    schedule = StubAgent(
+        "schedule",
+        tool_calls=(ToolCall(name="get_schedule", call_count=1, success_count=0),),
+    )
+    service = OrchestratorService(
+        Orchestrator(), StubAgent("general"), schedule, StubAgent("search")
+    )
+
+    result = service.respond("내일 일정 알려줘")
+
+    assert result.tool_names == ("get_schedule",)
+    assert result.all_tools_succeeded is False
+
+
+def test_service_reports_no_tools_for_a_toolless_agent() -> None:
+    service = OrchestratorService(
+        Orchestrator(), StubAgent("general"), StubAgent("schedule"), StubAgent("search")
+    )
+
+    result = service.respond("파이썬 딕셔너리를 설명해줘")
+
+    assert result.selected_agent is AgentName.GENERAL
+    assert result.tool_names == ()
+    assert result.all_tools_succeeded is True
 
 
 class InvalidOrchestrator:

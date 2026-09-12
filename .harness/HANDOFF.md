@@ -167,3 +167,101 @@ Phase 2를 시작하려면 사용자에게 Multi Agent의 목표·파일·라우
 ### 다음 세션이 할 일
 
 Phase 3 Tool Calling을 시작하려면 사용자에게 목표·파일·Tool 계약·테스트 방법을 제시하고 컨펌을 받는다.
+
+---
+
+## 2026-09-12 — 세션 10 (Claude Code)
+
+**브랜치:** `phase3/tool-calling`
+
+### 한 일
+
+1. **Phase 3를 3-A / 3-B로 쪼개 계획을 세우고 사용자 컨펌을 받았다.** 3-B(`search_web`·`search_place`)를 분리한 이유는 무료 제공자가 없기 때문이다. Brave 무료 tier가 2026년 2월에 폐지되어 카드 등록 후 월 $5 크레딧제로 바뀌었고, 나머지 후보는 계정·낮은 쿼터 또는 미니PC 자원 상시 점유를 요구한다.
+2. **일정 관리를 Google Calendar MCP 연결로 구현했다.** 사용자가 자체 저장소 대신 Google Calendar를 원했다. 커뮤니티 서버 `@cocal/google-calendar-mcp` v2.6.3을 Docker로 빌드해 streamable HTTP로 붙인다. 공식 Google Workspace MCP는 원격 서버이고 유료 플랜을 요구해 제외했다.
+3. **MCP Tool을 그대로 노출하지 않고 자체 `@tool` 래퍼로 감쌌다.** MCP 서버가 Description을 소유하면 LLM이 보는 설명이 편집 불가능한 영어 한 줄이 되고 비호출 조건을 붙일 수 없다. 래퍼가 Tool 이름과 한국어 Description을 소유하므로 `DOMAIN.md` 설계와 코드가 일치한다. 생성된 `tool_spec`을 실제로 출력해 Description·필수 인자·파라미터 설명이 의도대로 들어갔는지 확인했다.
+4. **Agent 반환 계약을 `AgentReply(text, tool_calls)`로 교체했다.** 이전에는 `str(agent(message))`로 `AgentResult`를 버려서 `tools_used`가 항상 빈 배열이었다. 이제 `metrics.tool_metrics`에서 호출 횟수·성공 횟수를 읽어 `tools_used`와 `tools_failed`를 실제 값으로 남긴다.
+5. **Strands 1.54.0 sdist를 내려받아 Tool·MCP 사양을 직접 확인했다.** 결과는 `ARCHITECTURE.md` 3.1절에 있다. 공식 문서 URL은 404였다. `original_function` 같은 속성은 없고 데코레이터 객체를 그대로 호출하면 된다.
+6. **개발 머신(Windows)에 uv 0.12.13을 설치했다.** 이전까지 검증이 미니PC에서만 가능했다. `ruff format`·`ruff check` 통과, unit 100개 통과.
+7. 문서를 갱신했다: `DOMAIN.md`(Tool 계약·검증 규칙), `ARCHITECTURE.md`(디렉터리 현황·SDK 사양·런타임), `DECISIONS.md`(결정 8건), `STATE.md`, `PLAN.md`, `BACKLOG.md`, `CLAUDE.md`=`AGENTS.md`(외부 Tool·MCP 정책 신설, DB 정책에 일정 데이터 항목 추가, 스테일했던 "아직 존재하지 않는 것" 목록 수정).
+
+### 다음 세션이 할 일
+
+**Phase 3-A는 코드가 끝났고 실연동만 남았다. 사용자 작업이 선행되어야 한다.** `PLAN.md`의 체크리스트를 그대로 따르면 된다.
+
+1. 사용자가 Google Cloud 프로젝트·Calendar API·OAuth Desktop app 자격증명을 만들고 `secrets/gcp-oauth.keys.json`에 둔다.
+2. 미니PC에서 `docker compose -f docker-compose.calendar.yml up -d --build`를 실행한다. 공개 이미지가 없어 첫 실행에 Node 빌드가 일어난다.
+3. 최초 OAuth 동의는 브라우저가 필요하다. 미니PC는 loopback 전용이므로 SSH 포트 포워딩으로 승인한다.
+4. `.env`에 `CALENDAR_MCP_URL`을 넣고 `uv run pytest -m llm`을 돌린다.
+
+### 주의할 것
+
+- **실제 캘린더 연동은 검증하지 않았다.** OAuth 자격증명이 없어서다. 단위 테스트는 기록된 MCP 응답 형태로만 검증했다. 동작한다고 서술하지 말 것.
+- **Open-Meteo 실제 네트워크 호출도 미검증이다.** 응답 샘플 파싱만 검증했다.
+- **2B 모델의 Tool 선택 정확도를 측정하지 않았다.** Tool 4개는 사용자가 선택한 값이며, 오선택률은 Phase 8 평가 대상이다.
+- **Tool Description을 고치면 `uv run pytest -m llm`을 다시 돌려야 한다.** Description이 Tool 선택 로직이기 때문이다.
+- 캘린더 MCP 서버 태그를 올리면 `app/tools/calendar_tools.py`의 MCP 인자 매핑을 함께 확인해야 한다. 단위 테스트가 매핑을 고정하고 있다.
+- `secrets/`와 `*.keys.json`은 `.gitignore`에 추가했다. 자격증명을 커밋하지 말 것.
+- 이 세션은 커밋하지 않았다. 사용자 요청이 없었다.
+
+---
+
+## 2026-09-13 — 세션 11 (Claude Code)
+
+**브랜치:** `phase3/tool-calling`
+
+### 한 일
+
+1. **세션 10에서 내가 넣은 날짜 결함을 찾아 고쳤다.** `date.today()`는 OS 로컬 시간대를 따르는데 `AGENT_TIMEZONE`은 프롬프트 문자열로만 쓰이고 있었다. 호스트가 UTC면 한국 시간 자정부터 오전 9시까지 주입 날짜가 하루 밀린다. 실측으로 확인했다 — 같은 순간에 `Asia/Seoul`은 2026-09-13, `UTC`는 2026-09-12였다. 이제 `build_today_clock(timezone)`이 지정된 시간대로 날짜를 계산하고, 두 전문 Agent의 `today` 인자는 기본값 없는 필수 인자로 바꿔 잘못된 기본값이 다시 생기지 않게 했다.
+2. **`get_current_time` Tool을 추가했다.** 사용자 요청대로 외부 API에서 시각을 가져온다. 등록 대상은 General Agent뿐이다. Schedule·Search는 프롬프트 주입을 유지했다 — 일정 조회 한 번에 모델 왕복이 둘이 되면 4.2 tok/s 환경에서 약 15초가 더 붙고, 모델이 시간 Tool을 건너뛰면 날짜를 지어낸다. 사용자와 이 선택을 확인했다.
+3. **시각 API를 실제로 호출해 고르고 검증했다.** `worldtimeapi.org`는 서비스가 종료되어 연결이 리셋된다. `timeapi.world`는 조사한 경로에서 404였다. `timeapi.io`만 키 없이 동작했다. Asia/Seoul·UTC·America/New_York 세 시간대로 실호출해 오프셋이 맞는지 확인했고, 강제 실패를 넣어 로컬 폴백도 확인했다.
+4. **`tzdata`를 의존성에 추가했다.** Windows에는 IANA 시간대 DB가 없어 `zoneinfo`가 실패한다. 개발 머신과 미니PC의 동작을 같게 하려면 필요하다. `AGENT_TIMEZONE`은 기동 시점에 유효성을 검증한다.
+5. **JSON fetcher를 `app/services/http_client.py`로 분리했다.** 날씨·시간 서비스가 같은 fetcher를 쓴다. 중복 구현을 막았다.
+6. 문서를 갱신했다: `DOMAIN.md`(Tool 표, 2.4절을 Agent별 날짜 경로로 재작성, 2.5절 시간 조회 폴백 신설), `ARCHITECTURE.md`(timeapi.io 사양, tzdata, 디렉터리), `DECISIONS.md`(결정 4건), `STATE.md`, `PLAN.md`.
+
+### 다음 세션이 할 일
+
+**Phase 3-A는 여전히 실연동 검증만 남았다.** `PLAN.md`의 체크리스트를 따르면 된다. 이번 세션에서 두 항목이 추가됐다.
+
+1. 사용자가 Google OAuth 자격증명을 만들어야 캘린더 검증을 시작할 수 있다. 이 부분은 세션 10 이후 변동 없다.
+2. 미니PC의 OS 시간대를 `timedatectl`로 확인한다. UTC라면 이번 수정이 실제 차이를 만든다. 코드는 이제 OS 설정과 무관하게 `AGENT_TIMEZONE`을 따른다.
+3. `uv run pytest -m llm`을 돌리면 시간 Tool 테스트 2개가 추가로 실행된다. 하나는 "오늘 며칠이야"에 Tool을 부르는지, 하나는 무관한 대화에서 부르지 않는지 본다.
+
+### 주의할 것
+
+- **`PLAN.md`에 다른 세션이 추가한 "한국어 지명 해석" 계획이 컨펌 대기 상태로 들어 있다.** 내가 쓴 것이 아니고 손대지 않았다. Open-Meteo Geocoding이 한국어 지명을 제대로 못 찾는다는 실측 표가 함께 있다. 이어서 작업할 때 먼저 확인할 것.
+- 그 세션이 Open-Meteo 실호출을 확인했다고 적어, `PLAN.md`의 "미검증" 목록에 있던 Open-Meteo 항목과 모순됐다. 미검증 목록에서 그 줄을 제거했다.
+- **timeapi.io의 무료 사용 한도는 문서에 없다.** 확인하지 못했다. 한도에 걸리면 로컬 시계로 폴백해 동작은 유지되지만, 그 사실을 알고 있어야 한다.
+- **General Agent가 Tool을 갖게 된 것은 설계 변경이다.** 이전까지 의도적으로 0개였다. 무관한 대화에서 시간 Tool을 부르는 오선택이 새 위험이며, `-m llm` 테스트 하나가 이것을 감시한다. 실제 비율은 Phase 8 평가 대상이다.
+- 이 세션은 커밋하지 않았다. 사용자 요청이 없었다.
+
+---
+
+## 2026-09-13 — 세션 12 (Claude Code)
+
+**브랜치:** `phase3/tool-calling`
+
+### 한 일
+
+1. **Open-Meteo 실호출을 검증했다.** `PLAN.md`에 미검증으로 남아 있던 항목이다. 날씨는 이미 런타임에 실제 HTTP fetcher로 주입돼 있었고, 조회·파싱 경로가 실제로 동작한다.
+2. **검증 과정에서 한국어 지명이 해석되지 않는 결함을 발견했다.** Geocoding 색인이 로마자여서 `language=ko`로도 한국어 이름이 검색되지 않는다. "서울"·"제주"는 0건, "대전"은 전라남도의 동명 지역, "부산"은 경상북도의 동명 지역이 1순위였다. 0건보다 동명 오답이 더 나쁘다 — 모델이 엉뚱한 지역 날씨를 사실처럼 답한다.
+3. **사용자 컨펌 후 `app/services/place_directory.py`를 추가했다.** 한국 17개 시·도와 주요 시 47개의 지명→좌표 표다. 접미사(`특별시`·`시`·`도` 등)를 떼고 다시 찾되 뗀 결과가 표에 있을 때만 뗀다 (`대구`를 `대`로 자르지 않기 위함). `도` 단위 질의는 도청 소재 도시로 해석하고 답변에 그 도시 이름을 남긴다.
+4. **좌표를 내 기억이 아니라 Open-Meteo에서 뽑았다.** 로마자 이름으로 조회해 행정구역(`admin1`)이 맞는 결과만 남기고 인구가 가장 많은 항목을 골랐다. 예보 격자가 API가 골랐을 지점과 같아진다. 독립적으로 두 번 수집해 47개 좌표가 전부 일치하는 것을 확인했다.
+5. **Geocoding 폴백에서 한글 질의는 `country_code == "KR"`를 우선하도록 했다.** 표에 없는 읍·면·동을 한국어로 물을 때 동명 해외 지명이 1순위로 오는 것을 막는다. 후보 수를 1개에서 5개로 늘렸다.
+6. 중복이던 `Place` 정의를 `place_directory`로 모으고 `weather_service`가 가져다 쓰게 했다.
+7. 문서를 갱신했다: `DOMAIN.md`(지명 해석 판정 순서 표), `DECISIONS.md`(결정 2건), `STATE.md`, `PLAN.md`.
+
+### 검증 결과
+
+- `ruff format`·`ruff check` 통과. unit 135개 통과.
+- 실호출: 서울·서울특별시·부산·대전·제주도·경기도·인천이 모두 올바른 광역 좌표로 해석됐다. 표에 없는 "학동"은 KR 우선 폴백으로, "도쿄"·"Paris"는 기존 경로로 조회됐다. "없는도시"는 Tool 실패로 떨어졌다.
+
+### 다음 세션이 할 일
+
+Phase 3-A의 남은 것은 여전히 캘린더 실연동이다. `PLAN.md` 체크리스트를 따르면 된다.
+
+### 주의할 것
+
+- **Tool Description은 바꾸지 않았으므로 `-m llm` 재실행은 필요 없다.** 지명 해석은 Description 아래의 구현이다. Description을 고치면 다시 돌려야 한다.
+- **표의 범위는 17개 시·도와 주요 시까지다.** 읍·면·동은 Geocoding 폴백이 담당하며, 그 경로의 정확도는 측정하지 않았다.
+- **`광주`는 광주광역시로 해석된다.** 경기도 광주시를 물으면 틀린 답이 나온다. 동명 광역시·기초시가 있는 지명의 일반적 한계이며, 실사용에서 문제가 되면 그때 다루면 된다.
+- 이 세션은 커밋하지 않았다. 사용자 요청이 없었다.

@@ -4,8 +4,10 @@ version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.141.1",
+    "httpx>=0.28.1",
     "python-dotenv>=1.2.3",
     "strands-agents[ollama]==1.54.0",
+    "tzdata>=2026.4",
     "uvicorn>=0.52.4",
 ]
 
