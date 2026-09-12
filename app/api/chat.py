@@ -8,7 +8,11 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
 
 from app.agents.general_agent import GeneralAgent
+from app.agents.orchestrator import Orchestrator
+from app.agents.schedule_agent import ScheduleAgent
+from app.agents.search_agent import SearchAgent
 from app.core.config import Settings
+from app.services.orchestrator_service import OrchestratorService
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -32,23 +36,29 @@ class ChatResponse(BaseModel):
     session_id: str
 
 
-def get_general_agent() -> GeneralAgent:
-    return GeneralAgent(Settings.from_env())
+def get_orchestrator_service() -> OrchestratorService:
+    settings = Settings.from_env()
+    return OrchestratorService(
+        orchestrator=Orchestrator(),
+        general_agent=GeneralAgent(settings),
+        schedule_agent=ScheduleAgent(settings),
+        search_agent=SearchAgent(settings),
+    )
 
 
 @router.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest) -> ChatResponse:
-    agent = get_general_agent()
+    service = get_orchestrator_service()
     started_at = time.monotonic()
     try:
-        response = agent.respond(request.message)
+        routed_response = service.respond(request.message)
     except Exception as error:
         logger.exception(
             "chat_request_failed",
             extra={
                 "user_id": request.user_id,
                 "session_id": request.session_id,
-                "selected_agent": "general",
+                "selected_agent": "unknown",
                 "tools_used": [],
                 "memory_retrieved": False,
                 "memory_stored": False,
@@ -64,7 +74,7 @@ def chat(request: ChatRequest) -> ChatResponse:
         extra={
             "user_id": request.user_id,
             "session_id": request.session_id,
-            "selected_agent": "general",
+            "selected_agent": routed_response.selected_agent,
             "tools_used": [],
             "agent_latency_ms": round((time.monotonic() - started_at) * 1_000, 2),
             "llm_latency_ms": round((time.monotonic() - started_at) * 1_000, 2),
@@ -72,4 +82,6 @@ def chat(request: ChatRequest) -> ChatResponse:
             "memory_stored": False,
         },
     )
-    return ChatResponse(response=response, session_id=request.session_id)
+    return ChatResponse(
+        response=routed_response.response, session_id=request.session_id
+    )

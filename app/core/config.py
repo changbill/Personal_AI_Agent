@@ -2,6 +2,11 @@
 
 import os
 from dataclasses import dataclass
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 @dataclass(frozen=True)
@@ -11,7 +16,8 @@ class Settings:
     ollama_num_ctx: int
 
     @classmethod
-    def from_env(cls) -> "Settings":
+    def from_env(cls, env_file: Path | None = None) -> "Settings":
+        load_dotenv(env_file or _PROJECT_ROOT / ".env", override=False)
         try:
             num_ctx = int(os.environ["OLLAMA_NUM_CTX"])
             settings = cls(

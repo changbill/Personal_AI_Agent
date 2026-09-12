@@ -3,11 +3,11 @@
 > 이 문서는 **지금 어떤 상태인지**만 담는다. 왜 그렇게 정했는지는 `DECISIONS.md`, 진행 상황은 `STATE.md`가 소유한다.
 > 아직 존재하지 않는 것은 "없음"으로 적는다. 있다고 가정해서 쓰지 않는다.
 
-최종 갱신: 2026-09-10
+최종 갱신: 2026-09-12
 
 ## 1. 코드베이스 현황
 
-**Phase 1의 최소 애플리케이션 코드가 존재한다.** 현재 저장소 구성은 다음과 같다.
+**Phase 2의 Multi Agent 라우팅 코드가 존재한다.** 현재 저장소 구성은 다음과 같다.
 
 | 경로 | 내용 |
 | --- | --- |
@@ -19,10 +19,10 @@
 | `.gitignore` | GitHub 표준 Python 템플릿 |
 | `README.md` | 스텁 (제목 한 줄) |
 | `LICENSE` | — |
-| `app/` | FastAPI 진입점, 단일 General Agent, 설정·구조화 로그, 브라우저 채팅 정적 자산 |
+| `app/` | FastAPI 진입점, 규칙 기반 Orchestrator·Schedule/Search/General Agent, 라우팅 서비스, 설정·구조화 로그, 브라우저 채팅 정적 자산 |
 | `tests/` | Phase 1 unit·llm 테스트 |
 | `pyproject.toml` / `uv.lock` | Python 3.12 의존성·고정된 잠금 파일 |
-| `.env.example` | Ollama 환경변수 키와 의미 |
+| `.env.example` | 기본 Ollama 환경변수 예시. gitignore된 `.env`는 실행 시 자동 로드 |
 
 없는 것: `Dockerfile`, `docker-compose.yml`.
 

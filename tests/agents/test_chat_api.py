@@ -2,19 +2,23 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import api
+from app.agents.orchestrator import AgentName
 from app.main import create_app
+from app.services.orchestrator_service import RoutedResponse
 
 pytestmark = pytest.mark.unit
 
 
-class StubGeneralAgent:
+class StubOrchestratorService:
     def respond(self, message: str) -> str:
-        return f"응답: {message}"
+        return RoutedResponse(
+            selected_agent=AgentName.GENERAL, response=f"응답: {message}"
+        )
 
 
 def test_chat_returns_agent_response(monkeypatch: pytest.MonkeyPatch) -> None:
     application = create_app()
-    monkeypatch.setattr(api.chat, "get_general_agent", StubGeneralAgent)
+    monkeypatch.setattr(api.chat, "get_orchestrator_service", StubOrchestratorService)
 
     with TestClient(application) as client:
         response = client.post(

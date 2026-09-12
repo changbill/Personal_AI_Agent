@@ -3,13 +3,13 @@
 > 이 문서는 **끝난 것만** 담는다. 세션별 서술은 `HANDOFF.md`, 아직 안 끝난 계획은 `PLAN.md`, 결정 이유는 `DECISIONS.md`가 소유한다.
 > Phase가 끝나면 그 Phase를 한 줄로 갱신한다. 이슈를 하나하나 로그처럼 쌓지 않는다.
 
-최종 갱신: 2026-09-10
+최종 갱신: 2026-09-12
 
 | Phase | 상태 | 요약 |
 | --- | --- | --- |
 | 0. 환경 검증 | 완료 | Docker CPU Ollama에서 `qwen3.5:2b-q4_K_M`를 기본 모델로 선정. 3회 평균 4.20 tok/s, Tool Calling·JSON 출력 확인. |
-| 1. 기본 Agent | 완료 | 단일 General Agent 기반 `POST /chat`·브라우저용 `GET /`, 환경변수 설정, 구조화 로그, unit·llm 검증 및 Cloudflare Access 외부 접근 확인 완료. |
-| 2. Multi Agent | 미착수 | — |
+| 1. 기본 Agent | 완료 | 단일 General Agent 기반 `POST /chat`·브라우저용 `GET /`, `.env` 자동 로드 환경변수 설정, 구조화 로그, unit·llm 검증 및 Cloudflare Access 외부 접근 확인 완료. |
+| 2. Multi Agent | 완료 | 규칙 기반 Orchestrator가 Schedule/Search/General 중 하나를 선택하고, 안전 폴백·API 위임·회귀 unit 테스트를 갖춤 |
 | 3. Tool Calling | 미착수 | — |
 | 4. Session Memory | 미착수 | — |
 | 5. Long-term Memory | 미착수 | — |

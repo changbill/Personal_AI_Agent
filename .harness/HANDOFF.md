@@ -134,3 +134,36 @@ Phase 2를 시작하려면 사용자에게 Multi Agent의 목표·파일·라우
 ### 다음 세션이 할 일
 
 Phase 2를 시작하려면 사용자에게 Multi Agent의 목표·파일·라우팅 설계·테스트 방법을 먼저 제시하고 컨펌을 받는다.
+
+
+---
+
+## 2026-09-12 — 세션 8 (Codex)
+
+**브랜치:** `feat/env-file-settings`
+
+### 한 일
+
+1. `python-dotenv`를 추가하고 `Settings.from_env()`가 저장소 루트의 gitignore된 `.env`를 자동 로드하도록 변경했다. 이미 주입된 셸 환경변수는 덮어쓰지 않는다.
+2. 운영용 `.env`에 Ollama host·고정 모델 태그·context 값을 등록하고, `.env.example`·README·아키텍처·결정 문서를 갱신했다.
+3. `.env` 자동 로드와 셸 환경변수 우선순위를 unit 테스트로 추가했다. `ruff`, unit 테스트(6 passed), lock·문서 동기화 검증을 통과했고, 새 설정으로 Uvicorn을 재기동해 `127.0.0.1:8000`의 HTTP 200을 확인했다.
+
+### 다음 세션이 할 일
+
+인증된 외부 브라우저에서 Cloudflare Tunnel 뒤 채팅 요청을 확인한다. 장기적으로는 Phase 9에서 자동 재시작 배포 구성을 만든다.
+
+---
+
+## 2026-09-12 — 세션 9 (Codex)
+
+**브랜치:** `feat/env-file-settings`
+
+### 한 일
+
+1. 모든 `POST /chat` 요청을 General Agent로 고정하던 동작을 Phase 2 규칙 기반 Orchestrator로 교체했다. Schedule/Search/General 중 하나만 선택하고, 복합 요청과 비정상 선택은 General로 폴백한다.
+2. Tool 없는 Schedule/Search 전문 Agent와 라우팅 서비스를 추가하고, API 구조화 로그에 실제 선택 Agent를 남기도록 변경했다.
+3. unit 14개와 실제 Ollama llm 테스트 1개, ruff, 문서 동기화, lock 검증을 통과했다.
+
+### 다음 세션이 할 일
+
+Phase 3 Tool Calling을 시작하려면 사용자에게 목표·파일·Tool 계약·테스트 방법을 제시하고 컨펌을 받는다.

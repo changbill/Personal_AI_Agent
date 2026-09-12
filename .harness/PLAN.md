@@ -3,10 +3,9 @@
 > 이 문서는 **안 끝난 것만** 담는다. 항목이 끝나면 여기서 제거하고 `STATE.md`에 Phase 한 줄로 반영한다.
 > 완료 항목을 체크 표시만 남긴 채 방치하지 않는다.
 
-최종 갱신: 2026-09-10
+최종 갱신: 2026-09-12
 
 
-- **Phase 2 Multi Agent** — Orchestrator / Schedule / Search / General 구현, 라우팅 테스트
 - **Phase 3 Tool Calling** — 역할별 Tool 구현, Agent별 Tool 분리, Description 작성, 오선택 사례를 테스트로 축적
 - **Phase 4 Session Memory** — Redis, TTL, multi-turn
 - **Phase 5 Long-term Memory** — PostgreSQL, Memory Agent, 후보 추출, 저장 조건, 중복·충돌 처리

@@ -5,6 +5,8 @@
 
 | 날짜 | 결정 | 이유 |
 | --- | --- | --- |
+| 2026-09-12 | Phase 2 Agent 선택은 명확한 의도를 규칙 기반으로 단일 분기하고, 복합·유효하지 않은 선택은 General로 폴백한다 | N150의 소형 로컬 모델에 불필요한 라우팅 LLM 호출을 추가하지 않고, 결정론적 회귀 테스트로 오선택을 방지한다. 실제 Tool Calling은 Phase 3에서 역할별로 연결한다. |
+| 2026-09-12 | Ollama 런타임 설정은 gitignore된 저장소 루트 `.env`에서 자동 로드하고, 셸 환경변수를 우선한다 | 미니PC에서 Uvicorn을 재기동할 때 매번 필수 환경변수를 입력하는 운영 오류를 없애면서도 systemd·컨테이너 등 배포 환경에서 명시적으로 주입한 값을 보존한다. |
 | 2026-09-10 | 외부 브라우저 접근은 `personal-agent.changee.cloud`의 Cloudflare Tunnel과 Cloudflare Access를 사용한다 | API를 공인 포트로 노출하지 않고 outbound Tunnel로만 연결한다. Cloudflare Access가 인증되지 않은 모델 호출을 차단해 미니PC 자원과 로컬 LLM 운영 비용을 보호한다. |
 | 2026-09-10 | Phase 1 Ollama 설정은 `think=false`, `num_ctx=2048`로 고정한다 | Strands 1.54.0의 요청 생성 코드에서 `additional_args`와 `options`가 각각 Ollama 요청에 전달되는 것을 확인했고, Intel N150 미니PC에서 해당 환경변수로 실제 LLM 테스트가 12.54초에 통과했다. 2048은 Phase 0 벤치마크와 같은 RAM 보수값이다. |
 | 2026-09-10 | Phase 1 기본 모델은 `qwen3.5:2b-q4_K_M`으로 고정한다 | N150 CPU Docker 환경에서 3회 평균 4.20 tok/s, 약 2.33GiB 메모리를 기록했고 Tool Calling·JSON Structured Output을 통과했다. `qwen2.5:3b`도 기능은 통과했지만 3.28 tok/s로 약 22% 느렸다. 4B 추가 평가는 필요성이 확인되지 않아 보류한다. 상세는 `benchmarks/phase0/RESULTS.md` 참조. |
